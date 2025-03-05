@@ -1,24 +1,59 @@
-[gd_scene load_steps=8 format=3 uid="uid://d3wss5cdpkfn6"]
+[gd_scene load_steps=12 format=3 uid="uid://d3wss5cdpkfn6"]
 
 [ext_resource type="PackedScene" uid="uid://c2a06y0s4s1ef" path="res://modules/company_intro/company_intro.tscn" id="1_oucax"]
 [ext_resource type="Script" path="res://modules/gamestart_splashscreen/gamestart_splashscreen.gd" id="1_uu4jd"]
 [ext_resource type="Shader" path="res://modules/dissolve_shader/dissolve.gdshader" id="3_87164"]
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_cft6m"]
-noise_type = 3
-frequency = 0.005
-fractal_octaves = 3
-fractal_lacunarity = 2.675
-fractal_gain = -2.52
+[sub_resource type="Gradient" id="Gradient_ffg8y"]
+colors = PackedColorArray(0, 0, 0, 1, 0.956863, 1, 1, 1)
 
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_bd4ss"]
-generate_mipmaps = false
-noise = SubResource("FastNoiseLite_cft6m")
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_eyml2"]
+noise_type = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_khfa5"]
+width = 32
+height = 32
+color_ramp = SubResource("Gradient_ffg8y")
+noise = SubResource("FastNoiseLite_eyml2")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_egu2a"]
 shader = ExtResource("3_87164")
-shader_parameter/dissolve_value = 1.0
-shader_parameter/dissolve_texture = SubResource("NoiseTexture2D_bd4ss")
+shader_parameter/dissolve_value = 0.0
+shader_parameter/dissolve_texture = SubResource("NoiseTexture2D_khfa5")
+
+[sub_resource type="Animation" id="Animation_em6hw"]
+resource_name = "hide"
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/dissolve_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.4, 0.0876782, 1, -0.1, -0.400314, 0.25, 0),
+"times": PackedFloat32Array(0, 1)
+}
+
+[sub_resource type="Animation" id="Animation_tnesa"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/dissolve_value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_dcwo4"]
+_data = {
+"RESET": SubResource("Animation_tnesa"),
+"hide": SubResource("Animation_em6hw")
+}
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_ini0w"]
 viewport_path = NodePath("IntroViewport")
@@ -33,6 +68,7 @@ grow_vertical = 2
 script = ExtResource("1_uu4jd")
 
 [node name="Back" type="ColorRect" parent="."]
+texture_filter = 1
 material = SubResource("ShaderMaterial_egu2a")
 layout_mode = 1
 anchors_preset = 15
@@ -42,6 +78,11 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.184314, 0.156863, 0.219608, 1)
 
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Back"]
+libraries = {
+"": SubResource("AnimationLibrary_dcwo4")
+}
+
 [node name="IntroViewport" type="SubViewport" parent="."]
 disable_3d = true
 transparent_bg = true
@@ -49,7 +90,6 @@ size = Vector2i(168, 60)
 
 [node name="YliIntro" parent="IntroViewport" instance=ExtResource("1_oucax")]
 position = Vector2(84, 30)
-_autostart = true
 
 [node name="OuputScreen" type="TextureRect" parent="."]
 texture_filter = 1
@@ -62,4 +102,39 @@ grow_vertical = 2
 texture = SubResource("ViewportTexture_ini0w")
 stretch_mode = 5
 
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="Panel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Panel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorRect2" type="ColorRect" parent="Panel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.592157, 0.592157, 0.592157, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="Panel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.87451, 0.372549, 0.439216, 1)
+
+[connection signal="showing_completed" from="." to="Back/AnimationPlayer" method="play" binds= ["hide"]]
+[connection signal="showing_started" from="." to="IntroViewport/YliIntro" method="play"]
 [connection signal="playing_completed" from="IntroViewport/YliIntro" to="." method="complete_showing"]
